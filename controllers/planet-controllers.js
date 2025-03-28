@@ -1,5 +1,6 @@
 const { Planet } = require('../models');
 const { ValidationError, UniqueConstraintError, Op } = require('sequelize');
+const validator = require('validator'); // Import validator library
 
 // Define allowed sort columns to prevent unwanted input
 const allowedSortColumns = ['name', 'type', 'population', 'military_strength'];
@@ -17,6 +18,31 @@ function handleError(res, error) {
     }
     console.error('Error:', error);
     return res.status(500).json({ error: 'An unexpected error occurred.' });
+}
+
+/**
+ * Middleware to find a planet by ID, validate ID, and handle 404.
+ * Attaches the found planet to req.planet.
+ */
+async function findPlanetMiddleware(req, res, next) {
+    const { id } = req.params;
+
+    // Validate UUID format using validator library
+    if (!validator.isUUID(id)) {
+        return res.status(400).json({ error: 'Invalid planet ID format. Must be a valid UUID.' });
+    }
+
+    try {
+        const planet = await Planet.findByPk(id);
+        if (!planet) {
+            return res.status(404).json({ error: 'Planet not found' });
+        }
+        req.planet = planet; // Attach planet to request object
+        next(); // Proceed to the next middleware/handler
+    } catch (error) {
+        // Pass errors to the centralized error handler
+        handleError(res, error);
+    }
 }
 
 /**
@@ -63,37 +89,23 @@ exports.findAllPlanets = async (req, res) => {
 
 /**
  * Retrieve a planet by ID
+ * Assumes findPlanetMiddleware has run successfully.
  */
 exports.findPlanetById = async (req, res) => {
-    try {
-        const planet = await Planet.findByPk(req.params.id);
-        if (!planet) {
-            return res.status(404).json({ error: 'Planet not found' });
-        }
-        return res.status(200).json(planet);
-    } catch (error) {
-        return handleError(res, error);
-    }
+    // Middleware already found the planet and attached it to req.planet
+    return res.status(200).json(req.planet);
 };
 
 /**
  * Update a planet
+ * Assumes findPlanetMiddleware has run successfully.
  */
 exports.updatePlanet = async (req, res) => {
     try {
-        // Validate UUID format
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-        if (!uuidRegex.test(req.params.id)) {
-            return res.status(400).json({ error: 'Invalid planet ID format. Must be a valid UUID.' });
-        }
-
-        const planet = await Planet.findByPk(req.params.id);
-        if (!planet) {
-            return res.status(404).json({ error: 'Planet not found' });
-        }
-        await planet.update(req.body);
-        await planet.reload(); // Reload the instance to get the latest data
-        return res.status(200).json(planet);
+        // Middleware found the planet (req.planet)
+        await req.planet.update(req.body);
+        await req.planet.reload(); // Reload the instance to get the latest data
+        return res.status(200).json(req.planet);
     } catch (error) {
         return handleError(res, error);
     }
@@ -101,14 +113,12 @@ exports.updatePlanet = async (req, res) => {
 
 /**
  * Delete a planet by ID
+ * Assumes findPlanetMiddleware has run successfully.
  */
 exports.deletePlanet = async (req, res) => {
     try {
-        const planet = await Planet.findByPk(req.params.id);
-        if (!planet) {
-            return res.status(404).json({ error: 'Planet not found' });
-        }
-        await planet.destroy();
+        // Middleware found the planet (req.planet)
+        await req.planet.destroy();
         return res.status(204).send();
     } catch (error) {
         return handleError(res, error);
@@ -126,3 +136,6 @@ exports.deleteAllPlanets = async (req, res) => {
         return handleError(res, error);
     }
 };
+
+// Export the middleware so it can be used in routes.js
+exports.findPlanetMiddleware = findPlanetMiddleware;
