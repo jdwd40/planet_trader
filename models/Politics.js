@@ -12,7 +12,7 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.UUID,
       allowNull: false,
       references: {
-        model: 'Planets',
+        model: 'planets',
         key: 'id'
       }
     },
@@ -20,16 +20,26 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.UUID,
       allowNull: false,
       references: {
-        model: 'Factions',
+        model: 'factions',
         key: 'id'
       }
     },
     influence: {
       type: DataTypes.INTEGER,
+      allowNull: false,
       defaultValue: 0
+    },
+    relationship: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: 'neutral'
     }
-  }, {});
-
+  }, {
+    tableName: 'politics',
+    underscored: true,
+    timestamps: true
+  });
+  
   Politics.associate = function(models) {
     // Politics belongs to a planet
     Politics.belongsTo(models.Planet, {
@@ -43,6 +53,6 @@ module.exports = (sequelize, DataTypes) => {
       as: 'faction'
     });
   };
-
+  
   return Politics;
 };

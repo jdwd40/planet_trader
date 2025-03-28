@@ -12,7 +12,7 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.UUID,
       allowNull: false,
       references: {
-        model: 'Planets',
+        model: 'planets',
         key: 'id'
       }
     },
@@ -20,19 +20,30 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.UUID,
       allowNull: false,
       references: {
-        model: 'Planets',
+        model: 'planets',
         key: 'id'
       }
     },
-    resources: {
-      type: DataTypes.JSONB,
-      defaultValue: {}
+    distance: {
+      type: DataTypes.FLOAT,
+      allowNull: false,
+      defaultValue: 0
     },
-    status: {
-      type: DataTypes.STRING,
-      defaultValue: 'active'
+    travel_time: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0
+    },
+    safety_rating: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0
     }
-  }, {});
+  }, {
+    tableName: 'trade_routes',
+    underscored: true,
+    timestamps: true
+  });
 
   TradeRoute.associate = function(models) {
     // A trade route belongs to a planet as origin
@@ -47,6 +58,6 @@ module.exports = (sequelize, DataTypes) => {
       as: 'destination'
     });
   };
-
+  
   return TradeRoute;
 };

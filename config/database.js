@@ -1,11 +1,19 @@
 // Directly load environment variables to troubleshoot
-require('dotenv').config({ path: './.env.development' });
+require('dotenv').config({ 
+  path: `./.env.${process.env.NODE_ENV || 'development'}`
+});
 
-// Print environment variables for debugging
+// If we're in test mode, make sure we use the test database
+if (process.env.NODE_ENV === 'test') {
+  console.log('Using TEST environment configuration');
+}
+
 console.log('Loading database config with:');
+console.log('Environment:', process.env.NODE_ENV || 'development');
 console.log('Username:', process.env.DB_USERNAME || 'jd');
-console.log('Password:', process.env.DB_PASSWORD ? '[SET]' : '[NOT SET]');
-console.log('Database:', process.env.DB_NAME || 'sorstar_dev');
+console.log('Database:', process.env.NODE_ENV === 'test' ? 
+  (process.env.TEST_DB_NAME || 'sorstar_test') : 
+  (process.env.DB_NAME || 'sorstar_dev'));
 
 module.exports = {
   development: {

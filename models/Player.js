@@ -1,7 +1,7 @@
-const { Sequelize, DataTypes } = require('sequelize');
-const sequelize = new Sequelize('postgres://user:password@localhost:5432/mydatabase');
+'use strict';
 
-const Player = sequelize.define('Player', {
+module.exports = (sequelize, DataTypes) => {
+  const Player = sequelize.define('Player', {
     username: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -20,9 +20,17 @@ const Player = sequelize.define('Player', {
         type: DataTypes.NUMERIC,
         defaultValue: 0
     }
-}, {
-    // Other model options go here
-    tableName: 'players', // Explicitly specify the table name if it's not the plural of the model
-});
+  }, {
+      // Other model options go here
+      tableName: 'players', // Explicitly specify the table name if it's not the plural of the model
+      underscored: true,    // Use underscored names (like password_hash)
+      timestamps: true      // Add createdAt and updatedAt timestamps
+  });
 
-module.exports = Player;
+  Player.associate = function(models) {
+    // Define associations here if any
+    // e.g., Player.hasMany(models.Ship); 
+  };
+
+  return Player;
+};

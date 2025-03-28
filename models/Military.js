@@ -12,27 +12,44 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.UUID,
       allowNull: false,
       references: {
-        model: 'Planets',
+        model: 'planets',
         key: 'id'
       }
     },
-    troops: {
+    strength: {
       type: DataTypes.INTEGER,
+      allowNull: false,
       defaultValue: 0
     },
-    fleets: {
+    ships: {
+      type: DataTypes.TEXT,
+      allowNull: false,
+      get() {
+        const rawValue = this.getDataValue('ships');
+        return rawValue ? JSON.parse(rawValue) : [];
+      },
+      set(value) {
+        this.setDataValue('ships', JSON.stringify(value));
+      }
+    },
+    defense_rating: {
       type: DataTypes.INTEGER,
+      allowNull: false,
       defaultValue: 0
     }
-  }, {});
-
+  }, {
+    tableName: 'military',
+    underscored: true,
+    timestamps: true
+  });
+  
   Military.associate = function(models) {
-    // A military unit belongs to a planet
+    // Military belongs to a planet
     Military.belongsTo(models.Planet, {
       foreignKey: 'planet_id',
       as: 'planet'
     });
   };
-
+  
   return Military;
 };

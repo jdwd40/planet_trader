@@ -15,11 +15,17 @@ app.get('/', (req, res) => {
 });
 
 // Use routers
-app.use('/planets', planetsRouter);
-app.use('/ships', shipsRouter);
-app.use('/players', playersRouter);
+app.use('/api/planets', planetsRouter);
+app.use('/api/ships', shipsRouter);
+app.use('/api/players', playersRouter);
 
 // Start the server
-app.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
-});
+// Only start listening if the file is run directly (not required as a module)
+if (require.main === module) {
+  app.listen(port, () => {
+    console.log(`Server running on http://localhost:${port}`);
+  });
+}
+
+// Export the app instance for testing or requiring elsewhere
+module.exports = app;

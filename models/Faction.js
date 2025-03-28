@@ -10,22 +10,29 @@ module.exports = (sequelize, DataTypes) => {
     },
     name: {
       type: DataTypes.STRING,
-      allowNull: false,
-      unique: true
-    },
-    ideology: {
-      type: DataTypes.STRING,
       allowNull: false
+    },
+    description: {
+      type: DataTypes.TEXT,
+      allowNull: true
+    },
+    influence: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0
     }
-  }, {});
-
+  }, {
+    tableName: 'factions',
+    underscored: true,
+    timestamps: true
+  });
+  
   Faction.associate = function(models) {
-    // A faction has many politics
     Faction.hasMany(models.Politics, {
       foreignKey: 'faction_id',
       as: 'politics'
     });
   };
-
+  
   return Faction;
 };
