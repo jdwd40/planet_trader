@@ -14,10 +14,10 @@ router.get('/:id', planetController.findPlanetById);
 // Update a planet by id
 router.put('/:id', planetController.updatePlanet);
 
+// Delete all planets (Use with caution!) - MUST be before /:id
+router.delete('/all', planetController.deleteAllPlanets);
+
 // Delete a planet by id
 router.delete('/:id', planetController.deletePlanet);
-
-// Delete all planets (Use with caution!)
-router.delete('/all', planetController.deleteAllPlanets);
 
 module.exports = router;

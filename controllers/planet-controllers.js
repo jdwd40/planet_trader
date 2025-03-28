@@ -81,11 +81,18 @@ exports.findPlanetById = async (req, res) => {
  */
 exports.updatePlanet = async (req, res) => {
     try {
+        // Validate UUID format
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        if (!uuidRegex.test(req.params.id)) {
+            return res.status(400).json({ error: 'Invalid planet ID format. Must be a valid UUID.' });
+        }
+
         const planet = await Planet.findByPk(req.params.id);
         if (!planet) {
             return res.status(404).json({ error: 'Planet not found' });
         }
         await planet.update(req.body);
+        await planet.reload(); // Reload the instance to get the latest data
         return res.status(200).json(planet);
     } catch (error) {
         return handleError(res, error);
