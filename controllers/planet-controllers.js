@@ -1,86 +1,68 @@
-// Planet Controllers
+const { Planet } = require('../models');
+const { ValidationError, UniqueConstraintError, Op } = require('sequelize');
 
-const { Planet, sequelize } = require('../models');
-const { ValidationError, UniqueConstraintError } = require('sequelize');
+// Define allowed sort columns to prevent unwanted input
+const allowedSortColumns = ['name', 'type', 'population', 'military_strength'];
+
+/**
+ * Handles errors by returning an appropriate HTTP response.
+ * @param {Object} res - Express response object.
+ * @param {Error} error - The caught error.
+ * @returns {Object} - Express response.
+ */
+function handleError(res, error) {
+    if (error instanceof ValidationError || error instanceof UniqueConstraintError) {
+        const messages = error.errors ? error.errors.map(e => e.message) : [error.message];
+        return res.status(400).json({ error: 'Validation failed', messages });
+    }
+    console.error('Error:', error);
+    return res.status(500).json({ error: 'An unexpected error occurred.' });
+}
 
 /**
  * Create a new planet
- * 
- * @param {Object} req - Express request object
- * @param {Object} req.body - Planet data
- * @param {string} req.body.name - Planet name
- * @param {string} req.body.type - Planet type
- * @param {Array<string>} req.body.resources - Planet resources
- * @param {Array<string>} req.body.factions - Planet factions
- * @param {number} req.body.population - Planet population
- * @param {number} req.body.military_strength - Planet military strength
- * @param {Array<string>} req.body.factories - Planet factories
- * @param {Object} res - Express response object
- * @returns {Promise<void>}
  */
 exports.createPlanet = async (req, res) => {
     try {
         const planet = await Planet.create(req.body);
-        res.status(201).json(planet);
+        return res.status(201).json(planet);
     } catch (error) {
-        // Check if it's a validation error
-        if (error instanceof ValidationError || error instanceof UniqueConstraintError) {
-            // Extract specific error messages if needed, or send a generic 400
-            const messages = error.errors ? error.errors.map(e => e.message) : [error.message];
-            res.status(400).json({ error: 'Validation failed', messages });
-        } else {
-            // Log unexpected errors for debugging
-            console.error('Error creating planet:', error);
-            res.status(500).json({ error: 'An unexpected error occurred.' });
-        }
+        return handleError(res, error);
     }
 };
 
 /**
  * Retrieve all planets
- * 
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @returns {Promise<void>}
  */
 exports.findAllPlanets = async (req, res) => {
     try {
-        // Extract query parameters
         const { type, name, sortBy, order = 'ASC' } = req.query;
-        let whereClause = {};
-        let orderClause = [];
-
+        const whereClause = {};
+        const orderClause = [];
+        
         if (type) {
             whereClause.type = type;
         }
         if (name) {
-            // Add logic for partial name matching if needed (e.g., using Op.like)
-            whereClause.name = name; 
+            // Use partial matching for the planet name
+            whereClause.name = { [Op.like]: `%${name}%` };
         }
-
-        if (sortBy) {
-            // Validate sortBy field if necessary
+        if (sortBy && allowedSortColumns.includes(sortBy)) {
             orderClause.push([sortBy, order.toUpperCase() === 'DESC' ? 'DESC' : 'ASC']);
         }
-
+        
         const planets = await Planet.findAll({ 
             where: whereClause,
             order: orderClause
         });
-        res.status(200).json(planets);
+        return res.status(200).json(planets);
     } catch (error) {
-        console.error('Error finding planets:', error);
-        res.status(500).json({ error: 'An unexpected error occurred.' });
+        return handleError(res, error);
     }
 };
 
 /**
  * Retrieve a planet by ID
- * 
- * @param {Object} req - Express request object
- * @param {string} req.params.id - Planet ID
- * @param {Object} res - Express response object
- * @returns {Promise<void>}
  */
 exports.findPlanetById = async (req, res) => {
     try {
@@ -88,20 +70,14 @@ exports.findPlanetById = async (req, res) => {
         if (!planet) {
             return res.status(404).json({ error: 'Planet not found' });
         }
-        res.status(200).json(planet);
+        return res.status(200).json(planet);
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        return handleError(res, error);
     }
 };
 
 /**
  * Update a planet
- * 
- * @param {Object} req - Express request object
- * @param {string} req.params.id - Planet ID
- * @param {Object} req.body - Updated planet data
- * @param {Object} res - Express response object
- * @returns {Promise<void>}
  */
 exports.updatePlanet = async (req, res) => {
     try {
@@ -110,19 +86,14 @@ exports.updatePlanet = async (req, res) => {
             return res.status(404).json({ error: 'Planet not found' });
         }
         await planet.update(req.body);
-        res.status(200).json(planet);
+        return res.status(200).json(planet);
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        return handleError(res, error);
     }
 };
 
 /**
  * Delete a planet by ID
- * 
- * @param {Object} req - Express request object
- * @param {string} req.params.id - Planet ID
- * @param {Object} res - Express response object
- * @returns {Promise<void>}
  */
 exports.deletePlanet = async (req, res) => {
     try {
@@ -131,26 +102,20 @@ exports.deletePlanet = async (req, res) => {
             return res.status(404).json({ error: 'Planet not found' });
         }
         await planet.destroy();
-        // Return 204 No Content on successful deletion
-        res.status(204).send(); 
+        return res.status(204).send();
     } catch (error) {
-        console.error('Error deleting planet:', error);
-        res.status(500).json({ error: 'An unexpected error occurred.' });
+        return handleError(res, error);
     }
 };
 
 /**
  * Delete all planets
- * 
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @returns {Promise<void>}
  */
 exports.deleteAllPlanets = async (req, res) => {
     try {
         await Planet.destroy({ where: {} });
-        res.status(200).json({ message: 'All planets deleted' });
+        return res.status(200).json({ message: 'All planets deleted' });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        return handleError(res, error);
     }
 };
